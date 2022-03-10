@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/bitly/go-simplejson"
+	"github.com/hashwavelab/osmoxy/pb"
 )
 
 type Pool struct {
@@ -39,8 +40,25 @@ func (_p *Pool) update(j *simplejson.Json) *Pool {
 	}
 }
 
+func (_p *Pool) export(includeWeight bool) (string, []*pb.PoolAsset, string) {
+	pae := make([]*pb.PoolAsset, 0)
+	_p.RLock()
+	defer _p.RUnlock()
+	for _, a := range _p.PoolAssets {
+		ae := &pb.PoolAsset{
+			Denom:  a.Denom,
+			Amount: a.Amount,
+		}
+		if includeWeight {
+			ae.Weight = a.Weight
+		}
+		pae = append(pae, ae)
+	}
+	return _p.PairIndex, pae, _p.Fee
+}
+
 // Return true if the pool is a UniV2 type pool with two assets and equal weights.
-func (_p *Pool) IsUniV2() bool {
+func (_p *Pool) isUniV2() bool {
 	_p.RLock()
 	defer _p.RUnlock()
 	if len(_p.PoolAssets) != 2 {

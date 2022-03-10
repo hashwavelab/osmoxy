@@ -53,7 +53,14 @@ func (_p *Proxy) initBlockProcessor() {
 func (_p *Proxy) setLastBlock(b *simplejson.Json, bn uint64) {
 	_p.Lock()
 	defer _p.Unlock()
+	// TODO: save the last block
 	_p.blockNumber = bn
+}
+
+func (_p *Proxy) GetLastBlockNumber() uint64 {
+	_p.RLock()
+	defer _p.RUnlock()
+	return _p.blockNumber
 }
 
 func (_p *Proxy) InitBlockSubscription() {

@@ -24,5 +24,5 @@ func main() {
 	p.SubscribeNewBlock(ch, 0)
 	dex.InitQueryingPoolsAfterEveryNewBlock(ch)
 
-	<-make(chan struct{})
+	InitGrpcServer(p, dex)
 }
