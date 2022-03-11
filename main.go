@@ -5,14 +5,21 @@ import (
 
 	"github.com/hashwavelab/osmoxy/gamm"
 	"github.com/hashwavelab/osmoxy/proxy"
+	"github.com/hashwavelab/osmoxy/wallet"
 )
 
-var address string
+var (
+	address    string
+	accAddress string
+	wallets    map[string]*wallet.Wallet = make(map[string]*wallet.Wallet)
+)
 
 func init() {
-	a := flag.String("a", "localhost:9092", "gRPC server address")
+	a := flag.String("grpc", "localhost:9092", "gRPC server address")
+	aa := flag.String("acc", "", "account address")
 	flag.Parse()
 	address = *a
+	accAddress = *aa
 }
 
 func main() {
@@ -20,9 +27,11 @@ func main() {
 	p.InitBlockSubscription()
 
 	dex := gamm.NewDex(p)
-	ch := make(chan interface{})
-	p.SubscribeNewBlock(ch, 0)
-	dex.InitQueryingPoolsAfterEveryNewBlock(ch)
+	dex.InitQueryingPoolsAfterEveryNewBlock()
 
-	InitGrpcServer(p, dex)
+	wallet := wallet.NewWallet(p, accAddress)
+	wallet.InitQueryingBalancesAfterEveryNewBlock()
+	wallets[accAddress] = wallet
+
+	InitGrpcServer(p, dex, wallets)
 }

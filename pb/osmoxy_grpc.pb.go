@@ -20,6 +20,9 @@ const _ = grpc.SupportPackageIsVersion7
 type OsmoxyClient interface {
 	GetPoolsSnapshot(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*PoolsSnapshot, error)
 	SubscribePoolsUpdate(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (Osmoxy_SubscribePoolsUpdateClient, error)
+	GetBalances(ctx context.Context, in *AddressRequest, opts ...grpc.CallOption) (*Balances, error)
+	SubscribeBalances(ctx context.Context, in *AddressRequest, opts ...grpc.CallOption) (Osmoxy_SubscribeBalancesClient, error)
+	SubmitSwap(ctx context.Context, in *SwapParams, opts ...grpc.CallOption) (*SwapResult, error)
 	// Legacy methods compatiable with UniV2 pairs
 	GetUniV2PairsSnapshot(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*UniV2PairsSnapshot, error)
 	SubscribeUniV2PairsUpdate(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (Osmoxy_SubscribeUniV2PairsUpdateClient, error)
@@ -74,6 +77,56 @@ func (x *osmoxySubscribePoolsUpdateClient) Recv() (*PoolsUpdate, error) {
 	return m, nil
 }
 
+func (c *osmoxyClient) GetBalances(ctx context.Context, in *AddressRequest, opts ...grpc.CallOption) (*Balances, error) {
+	out := new(Balances)
+	err := c.cc.Invoke(ctx, "/osmoxy.Osmoxy/GetBalances", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *osmoxyClient) SubscribeBalances(ctx context.Context, in *AddressRequest, opts ...grpc.CallOption) (Osmoxy_SubscribeBalancesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Osmoxy_ServiceDesc.Streams[1], "/osmoxy.Osmoxy/SubscribeBalances", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &osmoxySubscribeBalancesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Osmoxy_SubscribeBalancesClient interface {
+	Recv() (*Balances, error)
+	grpc.ClientStream
+}
+
+type osmoxySubscribeBalancesClient struct {
+	grpc.ClientStream
+}
+
+func (x *osmoxySubscribeBalancesClient) Recv() (*Balances, error) {
+	m := new(Balances)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *osmoxyClient) SubmitSwap(ctx context.Context, in *SwapParams, opts ...grpc.CallOption) (*SwapResult, error) {
+	out := new(SwapResult)
+	err := c.cc.Invoke(ctx, "/osmoxy.Osmoxy/SubmitSwap", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *osmoxyClient) GetUniV2PairsSnapshot(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*UniV2PairsSnapshot, error) {
 	out := new(UniV2PairsSnapshot)
 	err := c.cc.Invoke(ctx, "/osmoxy.Osmoxy/GetUniV2PairsSnapshot", in, out, opts...)
@@ -84,7 +137,7 @@ func (c *osmoxyClient) GetUniV2PairsSnapshot(ctx context.Context, in *EmptyReque
 }
 
 func (c *osmoxyClient) SubscribeUniV2PairsUpdate(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (Osmoxy_SubscribeUniV2PairsUpdateClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Osmoxy_ServiceDesc.Streams[1], "/osmoxy.Osmoxy/SubscribeUniV2PairsUpdate", opts...)
+	stream, err := c.cc.NewStream(ctx, &Osmoxy_ServiceDesc.Streams[2], "/osmoxy.Osmoxy/SubscribeUniV2PairsUpdate", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -121,6 +174,9 @@ func (x *osmoxySubscribeUniV2PairsUpdateClient) Recv() (*UniV2PairsUpdate, error
 type OsmoxyServer interface {
 	GetPoolsSnapshot(context.Context, *EmptyRequest) (*PoolsSnapshot, error)
 	SubscribePoolsUpdate(*EmptyRequest, Osmoxy_SubscribePoolsUpdateServer) error
+	GetBalances(context.Context, *AddressRequest) (*Balances, error)
+	SubscribeBalances(*AddressRequest, Osmoxy_SubscribeBalancesServer) error
+	SubmitSwap(context.Context, *SwapParams) (*SwapResult, error)
 	// Legacy methods compatiable with UniV2 pairs
 	GetUniV2PairsSnapshot(context.Context, *EmptyRequest) (*UniV2PairsSnapshot, error)
 	SubscribeUniV2PairsUpdate(*EmptyRequest, Osmoxy_SubscribeUniV2PairsUpdateServer) error
@@ -136,6 +192,15 @@ func (UnimplementedOsmoxyServer) GetPoolsSnapshot(context.Context, *EmptyRequest
 }
 func (UnimplementedOsmoxyServer) SubscribePoolsUpdate(*EmptyRequest, Osmoxy_SubscribePoolsUpdateServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribePoolsUpdate not implemented")
+}
+func (UnimplementedOsmoxyServer) GetBalances(context.Context, *AddressRequest) (*Balances, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBalances not implemented")
+}
+func (UnimplementedOsmoxyServer) SubscribeBalances(*AddressRequest, Osmoxy_SubscribeBalancesServer) error {
+	return status.Errorf(codes.Unimplemented, "method SubscribeBalances not implemented")
+}
+func (UnimplementedOsmoxyServer) SubmitSwap(context.Context, *SwapParams) (*SwapResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitSwap not implemented")
 }
 func (UnimplementedOsmoxyServer) GetUniV2PairsSnapshot(context.Context, *EmptyRequest) (*UniV2PairsSnapshot, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUniV2PairsSnapshot not implemented")
@@ -195,6 +260,63 @@ func (x *osmoxySubscribePoolsUpdateServer) Send(m *PoolsUpdate) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Osmoxy_GetBalances_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OsmoxyServer).GetBalances(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/osmoxy.Osmoxy/GetBalances",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OsmoxyServer).GetBalances(ctx, req.(*AddressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Osmoxy_SubscribeBalances_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(AddressRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(OsmoxyServer).SubscribeBalances(m, &osmoxySubscribeBalancesServer{stream})
+}
+
+type Osmoxy_SubscribeBalancesServer interface {
+	Send(*Balances) error
+	grpc.ServerStream
+}
+
+type osmoxySubscribeBalancesServer struct {
+	grpc.ServerStream
+}
+
+func (x *osmoxySubscribeBalancesServer) Send(m *Balances) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _Osmoxy_SubmitSwap_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SwapParams)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OsmoxyServer).SubmitSwap(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/osmoxy.Osmoxy/SubmitSwap",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OsmoxyServer).SubmitSwap(ctx, req.(*SwapParams))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Osmoxy_GetUniV2PairsSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(EmptyRequest)
 	if err := dec(in); err != nil {
@@ -246,6 +368,14 @@ var Osmoxy_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Osmoxy_GetPoolsSnapshot_Handler,
 		},
 		{
+			MethodName: "GetBalances",
+			Handler:    _Osmoxy_GetBalances_Handler,
+		},
+		{
+			MethodName: "SubmitSwap",
+			Handler:    _Osmoxy_SubmitSwap_Handler,
+		},
+		{
 			MethodName: "GetUniV2PairsSnapshot",
 			Handler:    _Osmoxy_GetUniV2PairsSnapshot_Handler,
 		},
@@ -254,6 +384,11 @@ var Osmoxy_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "SubscribePoolsUpdate",
 			Handler:       _Osmoxy_SubscribePoolsUpdate_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "SubscribeBalances",
+			Handler:       _Osmoxy_SubscribeBalances_Handler,
 			ServerStreams: true,
 		},
 		{

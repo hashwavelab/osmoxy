@@ -8,12 +8,12 @@ import (
 	"github.com/hashwavelab/osmoxy/pb"
 )
 
-func (_d *Dex) ExportPoolsSnapshot() []*pb.Pool {
+func (D *Dex) ExportPoolsSnapshot() []*pb.Pool {
 	r := make([]*pb.Pool, 0)
-	_d.pools.Range(func(k, v interface{}) bool {
-		index, assets, fee := v.(*Pool).export(true)
+	D.pools.Range(func(k, v interface{}) bool {
+		id, assets, fee := v.(*Pool).export(true)
 		r = append(r, &pb.Pool{
-			Index:  index,
+			Id:     strconv.Itoa(int(id)),
 			Assets: assets,
 			Fee:    fee,
 		})
@@ -25,7 +25,6 @@ func (_d *Dex) ExportPoolsSnapshot() []*pb.Pool {
 func (D *Dex) SubscribePoolsUpdate(stream pb.Osmoxy_SubscribePoolsUpdateServer) error {
 	ch := make(chan interface{})
 	D.broadcaster.Register(ch, 100)
-	defer log.Println("unsub")
 	defer D.broadcaster.Unregister(ch)
 	for u := range ch {
 		updates := u.([]*Pool)
@@ -36,9 +35,9 @@ func (D *Dex) SubscribePoolsUpdate(stream pb.Osmoxy_SubscribePoolsUpdateServer) 
 			Updates:         make([]*pb.PoolUpdate, 0),
 		}
 		for _, u := range updates {
-			index, assets, _ := u.export(false)
+			id, assets, _ := u.export(false)
 			r.Updates = append(r.Updates, &pb.PoolUpdate{
-				Index:  index,
+				Id:     strconv.Itoa(int(id)),
 				Assets: assets,
 			})
 		}
@@ -51,21 +50,21 @@ func (D *Dex) SubscribePoolsUpdate(stream pb.Osmoxy_SubscribePoolsUpdateServer) 
 }
 
 // Legacy methods compatiable with UniV2 pairs:
-func (_d *Dex) ExportUniV2PairsSnapshot() []*pb.UniV2Pair {
+func (D *Dex) ExportUniV2PairsSnapshot() []*pb.UniV2Pair {
 	r := make([]*pb.UniV2Pair, 0)
-	_d.pools.Range(func(k, v interface{}) bool {
+	D.pools.Range(func(k, v interface{}) bool {
 		pool := v.(*Pool)
 		if !pool.isUniV2() {
 			return true
 		}
-		index, assets, fee := v.(*Pool).export(true)
+		id, assets, fee := v.(*Pool).export(true)
 		fIntOriginal, err := strconv.Atoi(fee)
 		if err != nil {
 			return true
 		}
 		fInt := uint32(fIntOriginal / 100000000000000)
 		r = append(r, &pb.UniV2Pair{
-			PairAddress: index,
+			PairAddress: strconv.Itoa(int(id)),
 			Token0:      assets[0].Denom,
 			Token1:      assets[1].Denom,
 			Reserve0:    assets[0].Amount,
@@ -94,9 +93,9 @@ func (D *Dex) SubscribeUniV2PairsUpdate(stream pb.Osmoxy_SubscribeUniV2PairsUpda
 			if !u.isUniV2() {
 				continue
 			}
-			index, assets, _ := u.export(false)
+			id, assets, _ := u.export(false)
 			r.Univ2Updates = append(r.Univ2Updates, &pb.UniV2PairUpdate{
-				PairAddress: index,
+				PairAddress: strconv.Itoa(int(id)),
 				Reserve0:    assets[0].Amount,
 				Reserve1:    assets[1].Amount,
 			})

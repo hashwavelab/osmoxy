@@ -10,12 +10,19 @@ package osmoxy;
 service Osmoxy {
     rpc GetPoolsSnapshot (EmptyRequest) returns (PoolsSnapshot) {}
     rpc SubscribePoolsUpdate (EmptyRequest) returns (stream PoolsUpdate) {}
+    rpc GetBalances (AddressRequest) returns (Balances) {}
+    rpc SubscribeBalances (AddressRequest) returns (stream Balances) {}
+    rpc SubmitSwap (SwapParams) returns (SwapResult) {}
     // Legacy methods compatiable with UniV2 pairs
     rpc GetUniV2PairsSnapshot (EmptyRequest) returns (UniV2PairsSnapshot) {}
     rpc SubscribeUniV2PairsUpdate (EmptyRequest) returns (stream UniV2PairsUpdate) {}
 }
 
 message EmptyRequest {
+}
+
+message AddressRequest {
+    string address = 1;
 }
 
 message PoolAsset {
@@ -25,7 +32,7 @@ message PoolAsset {
 }
 
 message Pool {
-    string index = 1;
+    string id = 1;
     repeated PoolAsset assets = 2;
     string fee = 3;
 }
@@ -36,7 +43,7 @@ message PoolsSnapshot {
 }
 
 message PoolUpdate {
-    string index = 1;
+    string id = 1;
     repeated PoolAsset assets = 2;
 }
 
@@ -74,4 +81,35 @@ message UniV2PairsUpdate {
     uint64 to_block_number = 2;
     uint64 timestamp = 3;
     repeated UniV2PairUpdate univ2_updates = 4;
+}
+
+message Asset {
+    string denom = 1;
+    string amount = 2;
+}
+
+message Balances {
+    repeated Asset assets = 1;
+}
+
+message SwapRoute {
+    string pool_id = 1;
+    string denom = 2;
+}
+
+message SwapParams {
+    string wallet_address = 1;
+    bool swap_exact_to = 2;
+    string exact_amount = 3;
+    string exact_denom = 4;
+    string req_amount = 5;
+    repeated SwapRoute swap_routes = 6;
+}
+
+message SwapResult {
+    bool status = 1;
+    string hash = 2;
+    repeated Asset asset_flows = 3;
+    Asset gas_flow = 4;
+    uint64 gas_used = 5; 
 }

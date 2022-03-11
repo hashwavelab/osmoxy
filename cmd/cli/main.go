@@ -21,6 +21,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"io"
 	"log"
 	"time"
@@ -33,7 +34,17 @@ const (
 	address = "localhost:9094"
 )
 
+var (
+	accAddress string
+)
+
 var m map[string]bool = make(map[string]bool)
+
+func init() {
+	aa := flag.String("acc", "", "account address")
+	flag.Parse()
+	accAddress = *aa
+}
 
 func main() {
 	// Set up a connection to the server.
@@ -43,11 +54,12 @@ func main() {
 	}
 	defer conn.Close()
 	c := pb.NewOsmoxyClient(conn)
-	Get1(c)
-	//GetWallet(c)
-	//SubAllowance(c)
-	go Sub(c)
-	Sub1(c)
+	// Get(c)
+	// Sub(c)
+	// go Sub(c)
+	// Sub1(c)
+	GetBalances(c)
+	SubBalances(c)
 }
 
 func Get(c pb.OsmoxyClient) {
@@ -56,9 +68,6 @@ func Get(c pb.OsmoxyClient) {
 	r, err := c.GetPoolsSnapshot(context.Background(), &pb.EmptyRequest{}, grpc.MaxCallRecvMsgSize(200*1024*1024))
 	if err != nil {
 		log.Fatal(err)
-	}
-	for _, pool := range r.Pools {
-		log.Println(pool)
 	}
 	log.Println(len(r.Pools))
 	for _, p := range r.Pools {
@@ -96,9 +105,6 @@ func Get1(c pb.OsmoxyClient) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	for _, pool := range r.Pairs {
-		log.Println(pool)
-	}
 	log.Println(len(r.Pairs))
 	for _, p := range r.Pairs {
 		log.Println(p)
@@ -124,6 +130,42 @@ func Sub1(c pb.OsmoxyClient) {
 		// for _, update := range updates.Univ2Updates {
 		// 	log.Println(update)
 		// }
+		ts = time.Now()
+	}
+}
+
+func GetBalances(c pb.OsmoxyClient) {
+	start := time.Now()
+	log.Println("getting")
+	r, err := c.GetBalances(context.Background(), &pb.AddressRequest{Address: accAddress}, grpc.MaxCallRecvMsgSize(200*1024*1024))
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, a := range r.Assets {
+		log.Println(a)
+	}
+	log.Println(len(r.Assets))
+	log.Println("get balances", time.Since(start))
+}
+
+func SubBalances(c pb.OsmoxyClient) {
+	stream, err := c.SubscribeBalances(context.Background(), &pb.AddressRequest{Address: accAddress})
+	if err != nil {
+		log.Fatal(err)
+	}
+	ts := time.Now()
+	for {
+		updates, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Println(err)
+		}
+		log.Println("SubBalances", len(updates.Assets), "time since last event block", time.Since(ts))
+		for _, a := range updates.Assets {
+			log.Println(a)
+		}
 		ts = time.Now()
 	}
 }

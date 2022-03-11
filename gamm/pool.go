@@ -4,47 +4,47 @@ import (
 	"log"
 	"sync"
 
-	"github.com/bitly/go-simplejson"
+	"github.com/hashwavelab/osmoxy/gamm/pool"
 	"github.com/hashwavelab/osmoxy/pb"
 )
 
 type Pool struct {
 	// fixed
 	sync.RWMutex
-	PairIndex  string
+	Id         uint64
 	PoolAssets []*PoolAsset
 	Fee        string
 }
 
-func (_p *Pool) update(j *simplejson.Json) *Pool {
-	_p.Lock()
-	defer _p.Unlock()
+func (P *Pool) update(p *pool.Pool) *Pool {
+	P.Lock()
+	defer P.Unlock()
 	updated := false
-	ul := len(j.Get("poolAssets").MustArray())
-	ol := len(_p.PoolAssets)
+	ul := len(p.PoolAssets)
+	ol := len(P.PoolAssets)
 	if ul != ol {
-		log.Println("Pool update error - number of assets not match", _p)
+		log.Println("Pool update error - number of assets not match", P)
 		return nil
 	}
-	for i := 0; i < ul; i++ {
-		ua := j.Get("poolAssets").GetIndex(i).Get("token").Get("amount").MustString()
-		if ua != _p.PoolAssets[i].Amount {
-			_p.PoolAssets[i].Amount = ua
+	for i, a := range p.PoolAssets {
+		ua := a.Token.Amount.String()
+		if ua != P.PoolAssets[i].Amount {
+			P.PoolAssets[i].Amount = ua
 			updated = true
 		}
 	}
 	if updated {
-		return _p
+		return P
 	} else {
 		return nil
 	}
 }
 
-func (_p *Pool) export(includeWeight bool) (string, []*pb.PoolAsset, string) {
+func (P *Pool) export(includeWeight bool) (uint64, []*pb.PoolAsset, string) {
 	pae := make([]*pb.PoolAsset, 0)
-	_p.RLock()
-	defer _p.RUnlock()
-	for _, a := range _p.PoolAssets {
+	P.RLock()
+	defer P.RUnlock()
+	for _, a := range P.PoolAssets {
 		ae := &pb.PoolAsset{
 			Denom:  a.Denom,
 			Amount: a.Amount,
@@ -54,17 +54,17 @@ func (_p *Pool) export(includeWeight bool) (string, []*pb.PoolAsset, string) {
 		}
 		pae = append(pae, ae)
 	}
-	return _p.PairIndex, pae, _p.Fee
+	return P.Id, pae, P.Fee
 }
 
 // Return true if the pool is a UniV2 type pool with two assets and equal weights.
-func (_p *Pool) isUniV2() bool {
-	_p.RLock()
-	defer _p.RUnlock()
-	if len(_p.PoolAssets) != 2 {
+func (P *Pool) isUniV2() bool {
+	P.RLock()
+	defer P.RUnlock()
+	if len(P.PoolAssets) != 2 {
 		return false
 	}
-	return _p.PoolAssets[0].Weight == _p.PoolAssets[1].Weight
+	return P.PoolAssets[0].Weight == P.PoolAssets[1].Weight
 }
 
 type PoolAsset struct {
