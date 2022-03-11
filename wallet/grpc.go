@@ -42,3 +42,12 @@ func (W *Wallet) SubscribeBalances(stream pb.Osmoxy_SubscribeBalancesServer) err
 	}
 	return nil
 }
+
+func (W *Wallet) Swap(p *pb.SwapParams) (*pb.SwapResult, error) {
+	tx := ""
+	resp, err := W.proxy.GetTx(tx)
+	if err != nil {
+		return nil, err
+	}
+	return getSwapResultFromTxResponse(resp)
+}
