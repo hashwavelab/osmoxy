@@ -1,7 +1,7 @@
 package wallet
 
 import (
-	tx "github.com/cosmos/cosmos-sdk/api/cosmos/tx/v1beta1"
+	"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/hashwavelab/osmoxy/pb"
 )
 

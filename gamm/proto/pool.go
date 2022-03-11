@@ -1,4 +1,4 @@
-package pool
+package proto
 
 import (
 	"time"

@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/hashwavelab/osmoxy/broadcast"
-	"github.com/hashwavelab/osmoxy/gamm/pool"
+	"github.com/hashwavelab/osmoxy/gamm/proto"
 	"github.com/hashwavelab/osmoxy/proxy"
 	"github.com/osmosis-labs/osmosis/v7/x/gamm/types"
 )
@@ -62,7 +62,7 @@ func (D *Dex) handlePools(resp *types.QueryPoolsResponse) []*Pool {
 }
 
 func (D *Dex) updatePool(p *codecTypes.Any) *Pool {
-	var pool pool.Pool
+	var pool proto.Pool
 	err := cdc.Amino.UnmarshalBinaryBare(p.Value, &pool)
 	if err != nil {
 		return nil
@@ -78,7 +78,7 @@ func (D *Dex) updatePool(p *codecTypes.Any) *Pool {
 	}
 }
 
-func newPool(p *pool.Pool) *Pool {
+func newPool(p *proto.Pool) *Pool {
 	pool := &Pool{
 		Id:         p.Id,
 		PoolAssets: make([]*PoolAsset, 0),

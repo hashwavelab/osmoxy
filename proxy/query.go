@@ -6,8 +6,8 @@ import (
 	"time"
 
 	base "github.com/cosmos/cosmos-sdk/api/cosmos/base/tendermint/v1beta1"
-	tx "github.com/cosmos/cosmos-sdk/api/cosmos/tx/v1beta1"
 	"github.com/cosmos/cosmos-sdk/types/query"
+	"github.com/cosmos/cosmos-sdk/types/tx"
 	bank "github.com/cosmos/cosmos-sdk/x/bank/types"
 	gamm "github.com/osmosis-labs/osmosis/v7/x/gamm/types"
 	"google.golang.org/grpc"

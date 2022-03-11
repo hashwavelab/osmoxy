@@ -4,7 +4,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/hashwavelab/osmoxy/gamm/pool"
+	"github.com/hashwavelab/osmoxy/gamm/proto"
 	"github.com/hashwavelab/osmoxy/pb"
 )
 
@@ -16,7 +16,7 @@ type Pool struct {
 	Fee        string
 }
 
-func (P *Pool) update(p *pool.Pool) *Pool {
+func (P *Pool) update(p *proto.Pool) *Pool {
 	P.Lock()
 	defer P.Unlock()
 	updated := false
