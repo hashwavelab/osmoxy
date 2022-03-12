@@ -63,7 +63,14 @@ func GetSwapResultFromTxResponse(resp *tx.GetTxResponse) (*pb.SwapResult, error)
 	if resp.TxResponse.Code == 0 {
 		status = true
 	}
-	var gasFlow pb.Asset = pb.Asset{
+	var gasFlow pb.Asset
+	if len(resp.Tx.AuthInfo.Fee.Amount) == 0 {
+		gasFlow = pb.Asset{
+			Denom:  "uosmo",
+			Amount: "0",
+		}
+	}
+	gasFlow = pb.Asset{
 		Denom:  resp.Tx.AuthInfo.Fee.Amount[0].Denom,
 		Amount: resp.Tx.AuthInfo.Fee.Amount[0].Amount.String(),
 	}
