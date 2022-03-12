@@ -69,10 +69,11 @@ func GetSwapResultFromTxResponse(resp *tx.GetTxResponse) (*pb.SwapResult, error)
 			Denom:  "uosmo",
 			Amount: "0",
 		}
-	}
-	gasFlow = pb.Asset{
-		Denom:  resp.Tx.AuthInfo.Fee.Amount[0].Denom,
-		Amount: resp.Tx.AuthInfo.Fee.Amount[0].Amount.String(),
+	} else {
+		gasFlow = pb.Asset{
+			Denom:  resp.Tx.AuthInfo.Fee.Amount[0].Denom,
+			Amount: resp.Tx.AuthInfo.Fee.Amount[0].Amount.String(),
+		}
 	}
 	var assetFlowArr []*pb.Asset
 	assetFlowMap := make(map[string]int)
