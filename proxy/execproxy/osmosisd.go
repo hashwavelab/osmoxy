@@ -1,5 +1,7 @@
 package execproxy
 
+import "os/exec"
+
 type OsmosisdCommand struct {
 	name  string
 	cmds  []string
@@ -8,10 +10,15 @@ type OsmosisdCommand struct {
 
 func NewOsmosisdCommand() *OsmosisdCommand {
 	return &OsmosisdCommand{
-		name:  "grpcurl",
+		name:  "osmosisd",
 		cmds:  []string{},
 		flags: []string{},
 	}
+}
+
+func (C *OsmosisdCommand) Execute() ([]byte, error) {
+	args := append(C.cmds, C.flags...)
+	return exec.Command(C.name, args...).Output()
 }
 
 func (C *OsmosisdCommand) SwapExactAmountIn(amountAndDenom, reqAmount string) *OsmosisdCommand {
@@ -20,7 +27,7 @@ func (C *OsmosisdCommand) SwapExactAmountIn(amountAndDenom, reqAmount string) *O
 }
 
 func (C *OsmosisdCommand) SwapExactAmountOut(amountAndDenom, reqAmount string) *OsmosisdCommand {
-	C.cmds = []string{"tx", "gamm", "swap-exact-amount-in", amountAndDenom, reqAmount}
+	C.cmds = []string{"tx", "gamm", "swap-exact-amount-out", amountAndDenom, reqAmount}
 	return C
 }
 

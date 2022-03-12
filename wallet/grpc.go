@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/hashwavelab/osmoxy/pb"
+	"github.com/hashwavelab/osmoxy/tx"
 )
 
 func (W *Wallet) ExportBalances() []*pb.Asset {
@@ -44,10 +45,13 @@ func (W *Wallet) SubscribeBalances(stream pb.Osmoxy_SubscribeBalancesServer) err
 }
 
 func (W *Wallet) Swap(p *pb.SwapParams) (*pb.SwapResult, error) {
-	tx := ""
-	resp, err := W.proxy.GetTx(tx)
+	hash, err := tx.SwapUsingOsmosisd(W.proxy, p)
 	if err != nil {
 		return nil, err
 	}
-	return getSwapResultFromTxResponse(resp)
+	resp, err := tx.WaitForTxResponse(W.proxy, hash)
+	if err != nil {
+		return nil, err
+	}
+	return tx.GetSwapResultFromTxResponse(resp)
 }

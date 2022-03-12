@@ -52,7 +52,7 @@ func (s *server) SubscribeUniV2PairsUpdate(in *pb.EmptyRequest, stream pb.Osmoxy
 func (s *server) GetBalances(ctx context.Context, in *pb.AddressRequest) (*pb.Balances, error) {
 	wallet, ok := s.wallets[in.Address]
 	if !ok {
-		return &pb.Balances{}, errors.New("wallet of given address is not found")
+		return nil, errors.New("wallet of given address is not found")
 	}
 	bals := &pb.Balances{
 		Assets: wallet.ExportBalances(),
@@ -66,6 +66,14 @@ func (s *server) SubscribeBalances(in *pb.AddressRequest, stream pb.Osmoxy_Subsc
 		return errors.New("wallet of given address is not found")
 	}
 	return wallet.SubscribeBalances(stream)
+}
+
+func (s *server) SubmitSwap(ctx context.Context, in *pb.SwapParams) (*pb.SwapResult, error) {
+	wallet, ok := s.wallets[in.WalletAddress]
+	if !ok {
+		return nil, errors.New("wallet of given address is not found")
+	}
+	return wallet.Swap(in)
 }
 
 func InitGrpcServer(p *proxy.Proxy, d *gamm.Dex, wallets map[string]*wallet.Wallet) {

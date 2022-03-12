@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/hashwavelab/osmoxy/proxy"
+	"github.com/hashwavelab/osmoxy/tx"
 	"github.com/hashwavelab/osmoxy/wallet"
 )
 
@@ -29,6 +30,6 @@ func main() {
 	p := proxy.NewProxy(address)
 	p.InitBlockSubscription()
 
-	r, err := wallet.QuerySwapResultByHash(p, hash)
+	r, err := tx.QuerySwapResultByHash(p, hash)
 	log.Println(r, err)
 }

@@ -13,7 +13,7 @@ func (D *Dex) ExportPoolsSnapshot() []*pb.Pool {
 	D.pools.Range(func(k, v interface{}) bool {
 		id, assets, fee := v.(*Pool).export(true)
 		r = append(r, &pb.Pool{
-			Id:     strconv.Itoa(int(id)),
+			Id:     id,
 			Assets: assets,
 			Fee:    fee,
 		})
@@ -37,7 +37,7 @@ func (D *Dex) SubscribePoolsUpdate(stream pb.Osmoxy_SubscribePoolsUpdateServer) 
 		for _, u := range updates {
 			id, assets, _ := u.export(false)
 			r.Updates = append(r.Updates, &pb.PoolUpdate{
-				Id:     strconv.Itoa(int(id)),
+				Id:     id,
 				Assets: assets,
 			})
 		}
