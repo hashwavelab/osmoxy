@@ -2,6 +2,7 @@ package gamm
 
 import (
 	"log"
+	"math/big"
 	"sync"
 	"time"
 
@@ -79,10 +80,16 @@ func (D *Dex) updatePool(p *codecTypes.Any) *Pool {
 }
 
 func newPool(p *proto.Pool) *Pool {
+	feeRat, ok := new(big.Rat).SetString(p.PoolParams.SwapFee.String())
+	if !ok {
+		log.Println("New pool fee converts to rat failed", p)
+		return nil
+	}
 	pool := &Pool{
 		Id:         p.Id,
 		PoolAssets: make([]*PoolAsset, 0),
-		Fee:        p.PoolParams.SwapFee.String(),
+		FeeN:       feeRat.Num().Uint64(),
+		FeeD:       feeRat.Denom().Uint64(),
 	}
 	for _, a := range p.PoolAssets {
 		pool.PoolAssets = append(pool.PoolAssets, &PoolAsset{

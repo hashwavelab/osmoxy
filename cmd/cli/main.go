@@ -56,10 +56,10 @@ func main() {
 	c := pb.NewOsmoxyClient(conn)
 	// Get(c)
 	// Sub(c)
-	// go Sub(c)
-	// Sub1(c)
-	GetBalances(c)
-	SubBalances(c)
+	Get1(c)
+	Sub1(c)
+	// GetBalances(c)
+	// SubBalances(c)
 }
 
 func Get(c pb.OsmoxyClient) {

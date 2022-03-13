@@ -13,7 +13,8 @@ type Pool struct {
 	sync.RWMutex
 	Id         uint64
 	PoolAssets []*PoolAsset
-	Fee        string
+	FeeN       uint64
+	FeeD       uint64
 }
 
 func (P *Pool) update(p *proto.Pool) *Pool {
@@ -40,7 +41,7 @@ func (P *Pool) update(p *proto.Pool) *Pool {
 	}
 }
 
-func (P *Pool) export(includeWeight bool) (uint64, []*pb.PoolAsset, string) {
+func (P *Pool) export(includeWeight bool) (uint64, []*pb.PoolAsset, uint64, uint64) {
 	pae := make([]*pb.PoolAsset, 0)
 	P.RLock()
 	defer P.RUnlock()
@@ -54,7 +55,7 @@ func (P *Pool) export(includeWeight bool) (uint64, []*pb.PoolAsset, string) {
 		}
 		pae = append(pae, ae)
 	}
-	return P.Id, pae, P.Fee
+	return P.Id, pae, P.FeeN, P.FeeD
 }
 
 // Return true if the pool is a UniV2 type pool with two assets and equal weights.

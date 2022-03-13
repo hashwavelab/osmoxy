@@ -34,7 +34,8 @@ message PoolAsset {
 message Pool {
     uint64 id = 1;
     repeated PoolAsset assets = 2;
-    string fee = 3;
+    uint64 fee_n = 3;
+    uint64 fee_d = 4;
 }
 
 message PoolsSnapshot {
@@ -62,7 +63,8 @@ message UniV2Pair {
     string token1 = 3;
     string reserve0 = 4;
     string reserve1 = 5;
-    uint32 fee_rev = 6;
+    uint64 fee_n = 6;
+    uint64 fee_d = 7;
 }
 
 message UniV2PairsSnapshot {
