@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	TransactionTimeout = 30 * time.Second
+	TransactionTimeout = 90 * time.Second
 )
 
 func SwapUsingOsmosisd(proxy *proxy.Proxy, params *pb.SwapParams) (string, error) {
@@ -113,13 +113,15 @@ func GetSwapResultFromTxResponse(resp *tx.GetTxResponse) (*pb.SwapResult, error)
 			assetFlowArr = append(assetFlowArr, &assetFlow)
 		}
 	}
-	return &pb.SwapResult{
+	res := &pb.SwapResult{
 		Status:     status,
 		Hash:       resp.TxResponse.TxHash,
 		AssetFlows: assetFlowArr,
 		GasFlow:    &gasFlow,
 		GasUsed:    uint64(resp.TxResponse.GasUsed),
-	}, nil
+	}
+	log.Println("swap result:", res)
+	return res, nil
 }
 
 func separator(data string) (int, string) {

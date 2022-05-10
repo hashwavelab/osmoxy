@@ -69,6 +69,7 @@ func (s *server) SubscribeBalances(in *pb.AddressRequest, stream pb.Osmoxy_Subsc
 }
 
 func (s *server) SubmitSwap(ctx context.Context, in *pb.SwapParams) (*pb.SwapResult, error) {
+	log.Println("Received swap request:", in)
 	wallet, ok := s.wallets[in.WalletAddress]
 	if !ok {
 		return nil, errors.New("wallet of given address is not found")

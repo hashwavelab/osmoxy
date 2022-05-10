@@ -109,7 +109,7 @@ func Get1(c pb.OsmoxyClient) {
 	for _, p := range r.Pairs {
 		log.Println(p)
 	}
-	log.Println("get taken", time.Since(start))
+	log.Println("get taken", time.Since(start), len(r.Pairs))
 }
 
 func Sub1(c pb.OsmoxyClient) {
