@@ -41,7 +41,8 @@ func WaitForTxResponse(proxy *proxy.Proxy, hash string) (*tx.GetTxResponse, erro
 	ch := make(chan interface{})
 	proxy.SubscribeNewBlock(ch, 1)
 	defer proxy.UnsubscribeNewBlock(ch)
-	timec := time.After(TransactionTimeout)
+	timer := time.NewTimer(TransactionTimeout)
+	defer timer.Stop()
 	for {
 		select {
 		case <-ch:
@@ -51,7 +52,7 @@ func WaitForTxResponse(proxy *proxy.Proxy, hash string) (*tx.GetTxResponse, erro
 			} else {
 				return resp, nil
 			}
-		case <-timec:
+		case <-timer.C:
 			log.Println("ExecuteRPDV2Trade ERROR -99 timeout")
 			return nil, errors.New("wait for transaction to be mined timeout")
 		}
