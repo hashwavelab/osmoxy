@@ -14,7 +14,8 @@ import (
 )
 
 var (
-	TransactionTimeout = 90 * time.Second
+	BlockNumberDeadline uint64 = 5
+	TransactionTimeout         = 90 * time.Second
 )
 
 func SwapUsingOsmosisd(proxy *proxy.Proxy, params *pb.SwapParams) (string, error) {
@@ -27,7 +28,8 @@ func SwapUsingOsmosisd(proxy *proxy.Proxy, params *pb.SwapParams) (string, error
 	for _, route := range params.SwapRoutes {
 		cmd = cmd.AddRoute(strconv.FormatInt(int64(route.PoolId), 10), route.Denom)
 	}
-	bytes, err := cmd.From(params.WalletAddress).OsmosisChainId().TestKeyringBackEnd().SkipConfirmation().Execute()
+	timeoutHeight := proxy.GetLastBlockNumber() + BlockNumberDeadline
+	bytes, err := cmd.From(params.WalletAddress).OsmosisChainId().TestKeyringBackEnd().SkipConfirmation().TimeoutHeight(strconv.Itoa(int(timeoutHeight))).Execute()
 	if err != nil {
 		log.Println("swap error:", err)
 		return "", nil

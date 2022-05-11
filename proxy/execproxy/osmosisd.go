@@ -42,6 +42,11 @@ func (C *OsmosisdCommand) From(accAddress string) *OsmosisdCommand {
 	return C
 }
 
+func (C *OsmosisdCommand) TimeoutHeight(height string) *OsmosisdCommand {
+	C.flags = append(C.flags, []string{"--timeout-height", height}...)
+	return C
+}
+
 func (C *OsmosisdCommand) OsmosisChainId() *OsmosisdCommand {
 	C.flags = append(C.flags, []string{"--chain-id", "osmosis-1"}...)
 	return C
