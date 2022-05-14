@@ -30,7 +30,7 @@ func SwapUsingOsmosisd(proxy *proxy.Proxy, params *pb.SwapParams) (string, error
 		cmd = cmd.AddRoute(strconv.FormatInt(int64(route.PoolId), 10), route.Denom)
 	}
 	timeoutHeight := proxy.GetLastBlockNumber() + BlockNumberDeadline
-	bytes, err := cmd.From(params.WalletAddress).OsmosisChainId().TestKeyringBackEnd().SkipConfirmation().TimeoutHeight(strconv.Itoa(int(timeoutHeight))).Execute()
+	bytes, err := cmd.From(params.WalletAddress).OsmosisChainId().TestKeyringBackEnd().SkipConfirmation().TimeoutHeight(strconv.Itoa(int(timeoutHeight))).SetFee("101uosmo").Execute()
 	if err != nil {
 		log.Println("swap error:", err)
 		return "", nil

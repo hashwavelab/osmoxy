@@ -37,6 +37,11 @@ func (C *OsmosisdCommand) AddRoute(poolId, denom string) *OsmosisdCommand {
 	return C
 }
 
+func (C *OsmosisdCommand) SetFee(fees string) *OsmosisdCommand {
+	C.flags = append(C.flags, []string{"--fees", fees}...)
+	return C
+}
+
 func (C *OsmosisdCommand) From(accAddress string) *OsmosisdCommand {
 	C.flags = append(C.flags, []string{"--from", accAddress}...)
 	return C
