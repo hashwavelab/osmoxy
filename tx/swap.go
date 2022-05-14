@@ -3,6 +3,7 @@ package tx
 import (
 	"errors"
 	"log"
+	"math/big"
 	"strconv"
 	"strings"
 	"time"
@@ -79,7 +80,7 @@ func GetSwapResultFromTxResponse(resp *tx.GetTxResponse) (*pb.SwapResult, error)
 		}
 	}
 	var assetFlowArr []*pb.Asset
-	assetFlowMap := make(map[string]int)
+	assetFlowMap := make(map[string]*big.Int)
 	// suppose to loop once
 	for _, log := range resp.TxResponse.Logs {
 		// supopose to loop once as well
@@ -89,17 +90,17 @@ func GetSwapResultFromTxResponse(resp *tx.GetTxResponse) (*pb.SwapResult, error)
 					switch data.Key {
 					case "tokens_in":
 						a, n := separator(data.Value)
-						if _, ok := assetFlowMap[n]; !ok {
-							assetFlowMap[n] = -a
+						if flowAmount, ok := assetFlowMap[n]; !ok {
+							assetFlowMap[n] = new(big.Int).Sub(new(big.Int), a)
 						} else {
-							assetFlowMap[n] -= a
+							assetFlowMap[n] = new(big.Int).Sub(flowAmount, a)
 						}
 					case "tokens_out":
 						a, n := separator(data.Value)
-						if _, ok := assetFlowMap[n]; !ok {
-							assetFlowMap[n] = a
+						if flowAmount, ok := assetFlowMap[n]; !ok {
+							assetFlowMap[n] = new(big.Int).Add(new(big.Int), a)
 						} else {
-							assetFlowMap[n] += a
+							assetFlowMap[n] = new(big.Int).Add(flowAmount, a)
 						}
 					}
 				}
@@ -108,10 +109,10 @@ func GetSwapResultFromTxResponse(resp *tx.GetTxResponse) (*pb.SwapResult, error)
 	}
 	for token := range assetFlowMap {
 		// ignore the asset which flow amount is 0
-		if assetFlowMap[token] != 0 {
+		if assetFlowMap[token].Cmp(new(big.Int)) != 0 {
 			assetFlow := pb.Asset{
 				Denom:  token,
-				Amount: strconv.Itoa(assetFlowMap[token]),
+				Amount: assetFlowMap[token].String(),
 			}
 			assetFlowArr = append(assetFlowArr, &assetFlow)
 		}
@@ -127,7 +128,7 @@ func GetSwapResultFromTxResponse(resp *tx.GetTxResponse) (*pb.SwapResult, error)
 	return res, nil
 }
 
-func separator(data string) (int, string) {
+func separator(data string) (*big.Int, string) {
 	for i := 0; i < len(data); i++ {
 		if '0' <= data[i] && data[i] <= '9' {
 			continue
@@ -135,14 +136,14 @@ func separator(data string) (int, string) {
 			// the second part of data is asset name
 			name := data[i:]
 			// the first part of data is amount
-			amount, err := strconv.Atoi(data[0:i])
-			if err != nil {
-				log.Println(err)
+			amount, ok := new(big.Int).SetString(data[0:i], 10)
+			if !ok {
+				log.Println("separator parse big Int failed", data)
 			}
 			return amount, name
 		}
 	}
-	return 0, ""
+	return new(big.Int), ""
 }
 
 // For testing
