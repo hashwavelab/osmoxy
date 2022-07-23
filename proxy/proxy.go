@@ -7,6 +7,7 @@ import (
 
 	base "github.com/cosmos/cosmos-sdk/api/cosmos/base/tendermint/v1beta1"
 	"github.com/hashwavelab/osmoxy/broadcast"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -16,6 +17,7 @@ var (
 
 type Proxy struct {
 	sync.RWMutex
+	conn                *grpc.ClientConn
 	address             string
 	blockChan           chan *base.GetLatestBlockResponse
 	blockNumber         uint64
@@ -28,48 +30,56 @@ func NewProxy(a string) *Proxy {
 		blockChan:           make(chan *base.GetLatestBlockResponse),
 		newBlockBoardcaster: broadcast.NewBroadcaster(),
 	}
+
+	// setup the grpc connection
+	conn, err := p.connect()
+	if err != nil {
+		log.Fatal(err)
+	}
+	p.conn = conn
+
 	p.initBlockProcessor()
 	return p
 }
 
-func (_p *Proxy) initBlockProcessor() {
+func (p *Proxy) initBlockProcessor() {
 	go func() {
-		for b := range _p.blockChan {
+		for b := range p.blockChan {
 			bn := b.Block.LastCommit.Height
-			_p.setLastBlock(b, uint64(bn))
-			_p.newBlockBoardcaster.Submit(b)
+			p.setLastBlock(b, uint64(bn))
+			p.newBlockBoardcaster.Submit(b)
 		}
 	}()
 }
 
-func (_p *Proxy) setLastBlock(b *base.GetLatestBlockResponse, bn uint64) {
-	_p.Lock()
-	defer _p.Unlock()
+func (p *Proxy) setLastBlock(b *base.GetLatestBlockResponse, bn uint64) {
+	p.Lock()
+	defer p.Unlock()
 	// TODO: save the last block
-	_p.blockNumber = bn
+	p.blockNumber = bn
 }
 
-func (_p *Proxy) GetLastBlockNumber() uint64 {
-	_p.RLock()
-	defer _p.RUnlock()
-	return _p.blockNumber
+func (p *Proxy) GetLastBlockNumber() uint64 {
+	p.RLock()
+	defer p.RUnlock()
+	return p.blockNumber
 }
 
-func (_p *Proxy) InitBlockSubscription() {
-	log.Println("try connecting to:", _p.address)
+func (p *Proxy) InitBlockSubscription() {
+	log.Println("try connecting to:", p.address)
 	var lastBlockNumber int64 = 0
 	go func() {
 		for {
 			func() {
 				defer time.Sleep(BlockQueryInterval)
-				resp, err := _p.GetLatestBlock()
+				resp, err := p.GetLatestBlock()
 				if err != nil {
 					return
 				}
 				bn := resp.Block.LastCommit.Height
 				if bn > lastBlockNumber {
 					log.Println("New Block", bn)
-					_p.blockChan <- resp
+					p.blockChan <- resp
 					lastBlockNumber = bn
 				}
 			}()
@@ -77,10 +87,10 @@ func (_p *Proxy) InitBlockSubscription() {
 	}()
 }
 
-func (_p *Proxy) SubscribeNewBlock(c chan interface{}, buffer int) {
-	_p.newBlockBoardcaster.Register(c, buffer)
+func (p *Proxy) SubscribeNewBlock(c chan interface{}, buffer int) {
+	p.newBlockBoardcaster.Register(c, buffer)
 }
 
-func (_p *Proxy) UnsubscribeNewBlock(c chan interface{}) {
-	_p.newBlockBoardcaster.Unregister(c)
+func (p *Proxy) UnsubscribeNewBlock(c chan interface{}) {
+	p.newBlockBoardcaster.Unregister(c)
 }

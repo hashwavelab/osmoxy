@@ -15,7 +15,6 @@ type Broadcaster interface {
 	Unregister(chan<- interface{})
 	Close() error
 	Submit(interface{})
-	SubmitWait(interface{})
 }
 
 func NewBroadcaster() Broadcaster {
@@ -56,7 +55,7 @@ func (b *broadcaster) Close() error {
 }
 
 // Submit an item to be broadcast to all listeners.
-// Message will be missed by some of listeners if the buffer is full.
+// Message will be missed by a listener if its buffer is full.
 func (b *broadcaster) Submit(m interface{}) {
 	b.RLock()
 	defer b.RUnlock()
@@ -65,19 +64,5 @@ func (b *broadcaster) Submit(m interface{}) {
 		case relayCh <- m:
 		default:
 		}
-	}
-}
-
-// Submit an item to be broadcast to all listeners.
-// Wait for the message to be taken by all buffers
-func (b *broadcaster) SubmitWait(m interface{}) {
-	relayChs := make([]chan interface{}, 0)
-	b.RLock()
-	for _, relayCh := range b.subs {
-		relayChs = append(relayChs, relayCh)
-	}
-	b.RUnlock()
-	for _, relayCh := range relayChs {
-		relayCh <- m
 	}
 }

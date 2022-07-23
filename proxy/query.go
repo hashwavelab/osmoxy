@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	base "github.com/cosmos/cosmos-sdk/api/cosmos/base/tendermint/v1beta1"
@@ -19,56 +18,36 @@ var (
 	GRPCQueryTimeOut   time.Duration = 5 * time.Second
 )
 
-func (P *Proxy) connect() (*grpc.ClientConn, error) {
+func (p *Proxy) connect() (*grpc.ClientConn, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), GRPCConnectTimeOut)
 	defer cancel()
-	conn, err := grpc.DialContext(ctx, P.address, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	conn, err := grpc.DialContext(ctx, p.address, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	return conn, err
 }
 
-func (P *Proxy) GetPools() (*gamm.QueryPoolsResponse, error) {
-	conn, err := P.connect()
-	if err != nil {
-		return nil, errors.New("cannot connect to grpc")
-	}
-	defer conn.Close()
-	c := gamm.NewQueryClient(conn)
+func (p *Proxy) GetPools() (*gamm.QueryPoolsResponse, error) {
+	c := gamm.NewQueryClient(p.conn)
 	ctx, cancel := context.WithTimeout(context.Background(), GRPCQueryTimeOut)
 	defer cancel()
 	return c.Pools(ctx, &gamm.QueryPoolsRequest{Pagination: &query.PageRequest{Limit: 10000}})
 }
 
-func (P *Proxy) GetBalances(accAddress string) (*bank.QueryAllBalancesResponse, error) {
-	conn, err := P.connect()
-	if err != nil {
-		return nil, errors.New("cannot connect to grpc")
-	}
-	defer conn.Close()
-	c := bank.NewQueryClient(conn)
+func (p *Proxy) GetBalances(accAddress string) (*bank.QueryAllBalancesResponse, error) {
+	c := bank.NewQueryClient(p.conn)
 	ctx, cancel := context.WithTimeout(context.Background(), GRPCQueryTimeOut)
 	defer cancel()
 	return c.AllBalances(ctx, &bank.QueryAllBalancesRequest{Address: accAddress})
 }
 
-func (P *Proxy) GetLatestBlock() (*base.GetLatestBlockResponse, error) {
-	conn, err := P.connect()
-	if err != nil {
-		return nil, errors.New("cannot connect to grpc")
-	}
-	defer conn.Close()
-	c := base.NewServiceClient(conn)
+func (p *Proxy) GetLatestBlock() (*base.GetLatestBlockResponse, error) {
+	c := base.NewServiceClient(p.conn)
 	ctx, cancel := context.WithTimeout(context.Background(), GRPCQueryTimeOut)
 	defer cancel()
 	return c.GetLatestBlock(ctx, &base.GetLatestBlockRequest{})
 }
 
-func (P *Proxy) GetTx(hash string) (*tx.GetTxResponse, error) {
-	conn, err := P.connect()
-	if err != nil {
-		return nil, errors.New("cannot connect to grpc")
-	}
-	defer conn.Close()
-	c := tx.NewServiceClient(conn)
+func (p *Proxy) GetTx(hash string) (*tx.GetTxResponse, error) {
+	c := tx.NewServiceClient(p.conn)
 	ctx, cancel := context.WithTimeout(context.Background(), GRPCQueryTimeOut)
 	defer cancel()
 	return c.GetTx(ctx, &tx.GetTxRequest{Hash: hash})

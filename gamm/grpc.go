@@ -8,9 +8,9 @@ import (
 	"github.com/hashwavelab/osmoxy/pb"
 )
 
-func (D *Dex) ExportPoolsSnapshot() []*pb.Pool {
+func (d *Dex) ExportPoolsSnapshot() []*pb.Pool {
 	r := make([]*pb.Pool, 0)
-	D.pools.Range(func(k, v interface{}) bool {
+	d.pools.Range(func(k, v interface{}) bool {
 		id, assets, feeN, feeD := v.(*Pool).export(true)
 		r = append(r, &pb.Pool{
 			Id:     id,
@@ -23,15 +23,15 @@ func (D *Dex) ExportPoolsSnapshot() []*pb.Pool {
 	return r
 }
 
-func (D *Dex) SubscribePoolsUpdate(stream pb.Osmoxy_SubscribePoolsUpdateServer) error {
+func (d *Dex) SubscribePoolsUpdate(stream pb.Osmoxy_SubscribePoolsUpdateServer) error {
 	ch := make(chan interface{})
-	D.broadcaster.Register(ch, 100)
-	defer D.broadcaster.Unregister(ch)
+	d.broadcaster.Register(ch, 100)
+	defer d.broadcaster.Unregister(ch)
 	for u := range ch {
 		updates := u.([]*Pool)
 		r := &pb.PoolsUpdate{
-			FromBlockNumber: D.proxy.GetLastBlockNumber(),
-			ToBlockNumber:   D.proxy.GetLastBlockNumber(),
+			FromBlockNumber: d.proxy.GetLastBlockNumber(),
+			ToBlockNumber:   d.proxy.GetLastBlockNumber(),
 			Timestamp:       uint64(time.Now().UnixMilli()),
 			Updates:         make([]*pb.PoolUpdate, 0),
 		}
@@ -50,10 +50,10 @@ func (D *Dex) SubscribePoolsUpdate(stream pb.Osmoxy_SubscribePoolsUpdateServer) 
 	return nil
 }
 
-// Legacy methods compatiable with UniV2 pairs:
-func (D *Dex) ExportUniV2PairsSnapshot() []*pb.UniV2Pair {
+// Legacy method to be compatiable with UniV2 pairs:
+func (d *Dex) ExportUniV2PairsSnapshot() []*pb.UniV2Pair {
 	r := make([]*pb.UniV2Pair, 0)
-	D.pools.Range(func(k, v interface{}) bool {
+	d.pools.Range(func(k, v interface{}) bool {
 		pool := v.(*Pool)
 		if !pool.isUniV2() {
 			return true
@@ -73,16 +73,16 @@ func (D *Dex) ExportUniV2PairsSnapshot() []*pb.UniV2Pair {
 	return r
 }
 
-func (D *Dex) SubscribeUniV2PairsUpdate(stream pb.Osmoxy_SubscribeUniV2PairsUpdateServer) error {
+func (d *Dex) SubscribeUniV2PairsUpdate(stream pb.Osmoxy_SubscribeUniV2PairsUpdateServer) error {
 	ch := make(chan interface{})
-	D.broadcaster.Register(ch, 100)
+	d.broadcaster.Register(ch, 100)
 	defer log.Println("unsub")
-	defer D.broadcaster.Unregister(ch)
+	defer d.broadcaster.Unregister(ch)
 	for u := range ch {
 		updates := u.([]*Pool)
 		r := &pb.UniV2PairsUpdate{
-			FromBlockNumber: D.proxy.GetLastBlockNumber(),
-			ToBlockNumber:   D.proxy.GetLastBlockNumber(),
+			FromBlockNumber: d.proxy.GetLastBlockNumber(),
+			ToBlockNumber:   d.proxy.GetLastBlockNumber(),
 			Timestamp:       uint64(time.Now().UnixMilli()),
 			Univ2Updates:    make([]*pb.UniV2PairUpdate, 0),
 		}

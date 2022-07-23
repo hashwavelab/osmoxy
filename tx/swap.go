@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	BlockNumberDeadline uint64 = 5
-	TransactionTimeout         = 90 * time.Second
+	BlockNumberDeadline uint64        = 5
+	TransactionTimeout  time.Duration = 90 * time.Second
+	TransactionFee      string        = "1003uosmo"
 )
 
 func SwapUsingOsmosisd(proxy *proxy.Proxy, params *pb.SwapParams) (string, error) {
@@ -30,7 +31,7 @@ func SwapUsingOsmosisd(proxy *proxy.Proxy, params *pb.SwapParams) (string, error
 		cmd = cmd.AddRoute(strconv.FormatInt(int64(route.PoolId), 10), route.Denom)
 	}
 	timeoutHeight := proxy.GetLastBlockNumber() + BlockNumberDeadline
-	bytes, err := cmd.From(params.WalletAddress).OsmosisChainId().TestKeyringBackEnd().SkipConfirmation().TimeoutHeight(strconv.Itoa(int(timeoutHeight))).SetFee("101uosmo").Execute()
+	bytes, err := cmd.From(params.WalletAddress).OsmosisChainId().TestKeyringBackEnd().SkipConfirmation().TimeoutHeight(strconv.Itoa(int(timeoutHeight))).SetFee(TransactionFee).Execute()
 	if err != nil {
 		log.Println("swap error:", err)
 		return "", nil
@@ -40,6 +41,7 @@ func SwapUsingOsmosisd(proxy *proxy.Proxy, params *pb.SwapParams) (string, error
 	return tx, nil
 }
 
+// Subscribe new block and try to get transaction upon receiving every new block.
 func WaitForTxResponse(proxy *proxy.Proxy, hash string) (*tx.GetTxResponse, error) {
 	ch := make(chan interface{})
 	proxy.SubscribeNewBlock(ch, 1)
@@ -62,6 +64,7 @@ func WaitForTxResponse(proxy *proxy.Proxy, hash string) (*tx.GetTxResponse, erro
 	}
 }
 
+// Constrcut swap result using raw tx reponse.
 func GetSwapResultFromTxResponse(resp *tx.GetTxResponse) (*pb.SwapResult, error) {
 	status := false
 	if resp.TxResponse.Code == 0 {
@@ -81,9 +84,9 @@ func GetSwapResultFromTxResponse(resp *tx.GetTxResponse) (*pb.SwapResult, error)
 	}
 	var assetFlowArr []*pb.Asset
 	assetFlowMap := make(map[string]*big.Int)
-	// suppose to loop once
+	// should only loop once
 	for _, log := range resp.TxResponse.Logs {
-		// supopose to loop once as well
+		// should only loop once
 		for _, event := range log.Events {
 			if event.Type == "token_swapped" {
 				for _, data := range event.Attributes {

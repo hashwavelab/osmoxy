@@ -17,35 +17,35 @@ type Pool struct {
 	FeeD       uint64
 }
 
-func (P *Pool) update(p *proto.Pool) *Pool {
-	P.Lock()
-	defer P.Unlock()
+func (p *Pool) update(pl *proto.Pool) *Pool {
+	p.Lock()
+	defer p.Unlock()
 	updated := false
-	ul := len(p.PoolAssets)
-	ol := len(P.PoolAssets)
+	ul := len(pl.PoolAssets)
+	ol := len(p.PoolAssets)
 	if ul != ol {
-		log.Println("Pool update error - number of assets not match", P)
+		log.Println("Pool update error - number of assets not match", p)
 		return nil
 	}
-	for i, a := range p.PoolAssets {
+	for i, a := range pl.PoolAssets {
 		ua := a.Token.Amount.String()
-		if ua != P.PoolAssets[i].Amount {
-			P.PoolAssets[i].Amount = ua
+		if ua != p.PoolAssets[i].Amount {
+			p.PoolAssets[i].Amount = ua
 			updated = true
 		}
 	}
 	if updated {
-		return P
+		return p
 	} else {
 		return nil
 	}
 }
 
-func (P *Pool) export(includeWeight bool) (uint64, []*pb.PoolAsset, uint64, uint64) {
+func (p *Pool) export(includeWeight bool) (uint64, []*pb.PoolAsset, uint64, uint64) {
 	pae := make([]*pb.PoolAsset, 0)
-	P.RLock()
-	defer P.RUnlock()
-	for _, a := range P.PoolAssets {
+	p.RLock()
+	defer p.RUnlock()
+	for _, a := range p.PoolAssets {
 		ae := &pb.PoolAsset{
 			Denom:  a.Denom,
 			Amount: a.Amount,
@@ -55,17 +55,17 @@ func (P *Pool) export(includeWeight bool) (uint64, []*pb.PoolAsset, uint64, uint
 		}
 		pae = append(pae, ae)
 	}
-	return P.Id, pae, P.FeeN, P.FeeD
+	return p.Id, pae, p.FeeN, p.FeeD
 }
 
 // Return true if the pool is a UniV2 type pool with two assets and equal weights.
-func (P *Pool) isUniV2() bool {
-	P.RLock()
-	defer P.RUnlock()
-	if len(P.PoolAssets) != 2 {
+func (p *Pool) isUniV2() bool {
+	p.RLock()
+	defer p.RUnlock()
+	if len(p.PoolAssets) != 2 {
 		return false
 	}
-	return P.PoolAssets[0].Weight == P.PoolAssets[1].Weight
+	return p.PoolAssets[0].Weight == p.PoolAssets[1].Weight
 }
 
 type PoolAsset struct {

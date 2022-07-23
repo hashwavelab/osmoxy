@@ -33,28 +33,28 @@ func NewDex(proxy *proxy.Proxy) *Dex {
 	return dex
 }
 
-func (D *Dex) InitQueryingPoolsAfterEveryNewBlock() {
+func (d *Dex) InitQueryingPoolsAfterEveryNewBlock() {
 	ch := make(chan interface{})
-	D.proxy.SubscribeNewBlock(ch, 0)
+	d.proxy.SubscribeNewBlock(ch, 0)
 	go func() {
 		for range ch {
 			start := time.Now()
-			resp, err := D.proxy.GetPools()
+			resp, err := d.proxy.GetPools()
 			if err != nil {
 				log.Println("get pools err", err)
 				continue
 			}
-			updatedPools := D.handlePools(resp)
-			D.broadcaster.Submit(updatedPools)
+			updatedPools := d.handlePools(resp)
+			d.broadcaster.Submit(updatedPools)
 			log.Println("Pools updated", len(updatedPools), time.Since(start))
 		}
 	}()
 }
 
-func (D *Dex) handlePools(resp *types.QueryPoolsResponse) []*Pool {
+func (d *Dex) handlePools(resp *types.QueryPoolsResponse) []*Pool {
 	updatedPools := make([]*Pool, 0)
 	for _, pool := range resp.Pools {
-		up := D.updatePool(pool)
+		up := d.updatePool(pool)
 		if up != nil {
 			updatedPools = append(updatedPools, up)
 		}
@@ -62,17 +62,17 @@ func (D *Dex) handlePools(resp *types.QueryPoolsResponse) []*Pool {
 	return updatedPools
 }
 
-func (D *Dex) updatePool(p *codecTypes.Any) *Pool {
+func (d *Dex) updatePool(p *codecTypes.Any) *Pool {
 	var pool proto.Pool
 	err := cdc.Amino.UnmarshalBinaryBare(p.Value, &pool)
 	if err != nil {
 		return nil
 	}
 	//
-	pLoaded, ok := D.pools.Load(pool.Id)
+	pLoaded, ok := d.pools.Load(pool.Id)
 	if !ok {
 		np := newPool(&pool)
-		D.pools.Store(pool.Id, np)
+		d.pools.Store(pool.Id, np)
 		return np
 	} else {
 		return pLoaded.(*Pool).update(&pool)
